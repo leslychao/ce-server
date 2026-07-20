@@ -31,6 +31,7 @@ try {
         'STEAM_UID',
         'STEAM_GID',
         'UPDATE_ON_START',
+        'MOD_WORKSHOP_ITEMS',
         'SERVER_NAME',
         'SERVER_PASSWORD',
         'ADMIN_PASSWORD',
@@ -63,6 +64,20 @@ try {
 
     if ($settings['RCON_ENABLED'] -ne 'false') {
         throw 'RCON must remain disabled by default'
+    }
+
+    $expectedMods = @(
+        '3720904511:BetterThralls.pak',
+        '3719642461:Xev_HearthStone.pak',
+        '3718523921:Thrall_Commander.pak',
+        '3720737911:ExtendedThrallStatsEnhanced.pak',
+        '3719585133:DamageNumber.pak',
+        '3719513784:Simple_Minimap.pak',
+        '3720915336:StacksizePlus.pak',
+        '3719604490:Retro_Purge.pak'
+    ) -join ','
+    if ($settings['MOD_WORKSHOP_ITEMS'] -ne $expectedMods) {
+        throw 'Generated .env must configure the current eight mods in client load order'
     }
 
     $bytes = [System.IO.File]::ReadAllBytes($envPath)

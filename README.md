@@ -60,20 +60,33 @@ Docker-host. При CGNAT потребуется белый IP или внешн
 
 ## Моды
 
-Клиент и сервер должны использовать одинаковые `.pak`-файлы в одинаковом
-порядке. На Windows локальные моды клиента можно безопасно скопировать в
-серверное хранилище и сгенерировать `data/ConanSandbox/Mods/modlist.txt`:
+При первом запуске и перед каждым последующим стартом контейнер автоматически
+скачивает через SteamCMD текущие восемь Enhanced-модов, проверяет ожидаемые
+`.pak` и только после успеха запускает сервер. Порядок задаётся одной строкой
+`MOD_WORKSHOP_ITEMS` в формате `WorkshopID:PakName`:
+
+```dotenv
+MOD_WORKSHOP_ITEMS=3720904511:BetterThralls.pak,3719642461:Xev_HearthStone.pak,3718523921:Thrall_Commander.pak,3720737911:ExtendedThrallStatsEnhanced.pak,3719585133:DamageNumber.pak,3719513784:Simple_Minimap.pak,3720915336:StacksizePlus.pak,3719604490:Retro_Purge.pak
+```
+
+Bootstrap использует Workshop App ID `440900`, сохраняет кэш в
+`data/steamapps/workshop`, копирует PAK-файлы в `ConanSandbox/Mods` и атомарно
+заменяет `modlist.txt` последним. Если SteamCMD не скачал хотя бы один
+ожидаемый ненулевой PAK, сервер не стартует с неполным набором.
+
+`Base_material_worker.pak` не включён: запись остаётся в клиентском
+`modlist.txt`, но самого PAK сейчас нет и клиент его не монтирует. Для
+аварийной локальной синхронизации с установленного Windows-клиента остаётся
+скрипт:
 
 ```powershell
 docker compose stop server
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/sync-client-mods.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/sync-client-mods.ps1 -SkipMissing
 docker compose start server
 ```
 
-По умолчанию скрипт останавливается, если клиентский `modlist.txt` содержит
-отсутствующий `.pak`. Ключ `-SkipMissing` явно пропускает такие устаревшие
-строки. Скрипт не удаляет лишние `.pak`: сервер загружает только файлы,
-перечисленные в сгенерированном `modlist.txt`.
+После такого ручного копирования следующий старт снова приведёт сервер к
+декларативному списку `MOD_WORKSHOP_ITEMS`.
 
 ## RCON
 

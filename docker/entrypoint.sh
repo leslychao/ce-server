@@ -63,6 +63,8 @@ set_defaults() {
   : "${SERVER_DIR:=/home/steam/server-files}"
   : "${STEAMCMD_BIN:=/opt/steamcmd/steamcmd.sh}"
   : "${UPDATE_ON_START:=true}"
+  : "${STEAM_WORKSHOP_DIR:=${SERVER_DIR}/steamapps/workshop/content/440900}"
+  : "${MOD_WORKSHOP_ITEMS:=}"
   : "${SERVER_NAME:=Conan Exiles Enhanced Server}"
   : "${SERVER_PASSWORD:=}"
   : "${ADMIN_PASSWORD:=}"
@@ -80,6 +82,7 @@ validate_environment() {
 
   validate_boolean UPDATE_ON_START "$UPDATE_ON_START"
   validate_boolean RCON_ENABLED "$RCON_ENABLED"
+  validate_single_line MOD_WORKSHOP_ITEMS "$MOD_WORKSHOP_ITEMS"
   validate_port GAME_PORT "$GAME_PORT"
   validate_port PING_PORT "$PING_PORT"
   validate_port QUERY_PORT "$QUERY_PORT"
@@ -111,6 +114,8 @@ validate_environment() {
     die "RCON_PASSWORD is required when RCON_ENABLED=true"
     return 1
   fi
+
+  parse_workshop_mod_items
 }
 
 assert_non_root() {
@@ -129,6 +134,116 @@ install_or_update_server() {
     +login anonymous \
     +app_update 443030 validate \
     +quit
+}
+
+parse_workshop_mod_items() {
+  WORKSHOP_MOD_IDS=()
+  WORKSHOP_MOD_PAKS=()
+
+  [[ -n "${MOD_WORKSHOP_ITEMS:-}" ]] || return 0
+
+  local -a entries
+  local entry mod_id pak_name pak_key
+  local -A seen_ids=()
+  local -A seen_paks=()
+  IFS=',' read -r -a entries <<< "$MOD_WORKSHOP_ITEMS"
+
+  for entry in "${entries[@]}"; do
+    if [[ ! "$entry" =~ ^([0-9]+):([A-Za-z0-9][A-Za-z0-9_.-]*[.]pak)$ ]]; then
+      die "Invalid MOD_WORKSHOP_ITEMS entry: ${entry}"
+      return 1
+    fi
+
+    mod_id="${BASH_REMATCH[1]}"
+    pak_name="${BASH_REMATCH[2]}"
+    pak_key="${pak_name,,}"
+
+    [[ "$mod_id" != "0" ]] || {
+      die "Workshop mod ID must be positive: ${mod_id}"
+      return 1
+    }
+    [[ -z "${seen_ids[$mod_id]:-}" ]] || {
+      die "Duplicate Workshop mod ID: ${mod_id}"
+      return 1
+    }
+    [[ -z "${seen_paks[$pak_key]:-}" ]] || {
+      die "Duplicate Workshop PAK name: ${pak_name}"
+      return 1
+    }
+
+    seen_ids[$mod_id]=1
+    seen_paks[$pak_key]=1
+    WORKSHOP_MOD_IDS+=("$mod_id")
+    WORKSHOP_MOD_PAKS+=("$pak_name")
+  done
+}
+
+sync_workshop_mods() {
+  parse_workshop_mod_items
+
+  if ((${#WORKSHOP_MOD_IDS[@]} == 0)); then
+    log "No Workshop mods configured"
+    return 0
+  fi
+
+  local steamcmd_bin="${STEAMCMD_BIN:-/opt/steamcmd/steamcmd.sh}"
+  local server_dir="${SERVER_DIR:-/home/steam/server-files}"
+  local workshop_dir="${STEAM_WORKSHOP_DIR:-${server_dir}/steamapps/workshop/content/440900}"
+  local mods_dir="${server_dir}/ConanSandbox/Mods"
+  local -a steamcmd_args=(
+    +force_install_dir "$server_dir"
+    +login anonymous
+  )
+  local index mod_id pak_name source_path staging_dir
+
+  for mod_id in "${WORKSHOP_MOD_IDS[@]}"; do
+    steamcmd_args+=(+workshop_download_item 440900 "$mod_id" validate)
+  done
+  steamcmd_args+=(+logoff +quit)
+
+  log "Downloading or validating ${#WORKSHOP_MOD_IDS[@]} Conan Exiles Workshop mods"
+  "$steamcmd_bin" "${steamcmd_args[@]}"
+
+  for index in "${!WORKSHOP_MOD_IDS[@]}"; do
+    mod_id="${WORKSHOP_MOD_IDS[$index]}"
+    pak_name="${WORKSHOP_MOD_PAKS[$index]}"
+    source_path="${workshop_dir}/${mod_id}/${pak_name}"
+    [[ -s "$source_path" ]] || {
+      die "Workshop mod ${mod_id} did not provide expected PAK: ${pak_name}"
+      return 1
+    }
+  done
+
+  mkdir -p "$mods_dir"
+  staging_dir="$(mktemp -d "${mods_dir}/.sync.XXXXXX")"
+
+  for index in "${!WORKSHOP_MOD_IDS[@]}"; do
+    mod_id="${WORKSHOP_MOD_IDS[$index]}"
+    pak_name="${WORKSHOP_MOD_PAKS[$index]}"
+    source_path="${workshop_dir}/${mod_id}/${pak_name}"
+    cp -- "$source_path" "${staging_dir}/${pak_name}" || {
+      rm -rf -- "$staging_dir"
+      die "Failed staging Workshop PAK: ${pak_name}"
+      return 1
+    }
+    printf '*%s\n' "$pak_name" >> "${staging_dir}/modlist.txt"
+  done
+
+  for pak_name in "${WORKSHOP_MOD_PAKS[@]}"; do
+    mv -f -- "${staging_dir}/${pak_name}" "${mods_dir}/${pak_name}" || {
+      rm -rf -- "$staging_dir"
+      die "Failed installing Workshop PAK: ${pak_name}"
+      return 1
+    }
+  done
+  mv -f -- "${staging_dir}/modlist.txt" "${mods_dir}/modlist.txt" || {
+    rm -rf -- "$staging_dir"
+    die "Failed installing Workshop modlist.txt"
+    return 1
+  }
+  rmdir -- "$staging_dir"
+
+  log "Installed ${#WORKSHOP_MOD_IDS[@]} Workshop mods in configured load order"
 }
 
 set_ini_value() {
@@ -204,6 +319,7 @@ main() {
 
   [[ -x "$executable" ]] || die "Server executable not found after installation: ${executable}"
 
+  sync_workshop_mods
   configure_server
   build_server_args
   log "Starting server '${SERVER_NAME}' on UDP ${GAME_PORT} (query UDP ${QUERY_PORT})"
