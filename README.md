@@ -58,6 +58,23 @@ Docker-host. При CGNAT потребуется белый IP или внешн
 
 Если меняете `GAME_PORT`, одновременно установите `PING_PORT=GAME_PORT+1`.
 
+## Моды
+
+Клиент и сервер должны использовать одинаковые `.pak`-файлы в одинаковом
+порядке. На Windows локальные моды клиента можно безопасно скопировать в
+серверное хранилище и сгенерировать `data/ConanSandbox/Mods/modlist.txt`:
+
+```powershell
+docker compose stop server
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/sync-client-mods.ps1
+docker compose start server
+```
+
+По умолчанию скрипт останавливается, если клиентский `modlist.txt` содержит
+отсутствующий `.pak`. Ключ `-SkipMissing` явно пропускает такие устаревшие
+строки. Скрипт не удаляет лишние `.pak`: сервер загружает только файлы,
+перечисленные в сгенерированном `modlist.txt`.
+
 ## RCON
 
 RCON выключен и его порт не публикуется по умолчанию. Для включения задайте в
