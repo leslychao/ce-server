@@ -1,0 +1,44 @@
+name: conan-exiles-enhanced
+
+services:
+  server:
+    image: ce-server:local
+    build:
+      context: .
+      args:
+        STEAM_UID: ${STEAM_UID:-1000}
+        STEAM_GID: ${STEAM_GID:-1000}
+    platform: linux/amd64
+    container_name: conan-exiles-enhanced
+    restart: unless-stopped
+    stop_grace_period: 2m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      UPDATE_ON_START: ${UPDATE_ON_START:-true}
+      SERVER_NAME: ${SERVER_NAME:-Conan Exiles Enhanced Server}
+      SERVER_PASSWORD: ${SERVER_PASSWORD:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      GAME_PORT: ${GAME_PORT:-7777}
+      PING_PORT: ${PING_PORT:-7778}
+      QUERY_PORT: ${QUERY_PORT:-27015}
+      MAX_PLAYERS: ${MAX_PLAYERS:-20}
+      RCON_ENABLED: ${RCON_ENABLED:-false}
+      RCON_PORT: ${RCON_PORT:-25575}
+      RCON_PASSWORD: ${RCON_PASSWORD:-}
+    ports:
+      - target: ${GAME_PORT:-7777}
+        published: ${GAME_PORT:-7777}
+        protocol: udp
+      - target: ${PING_PORT:-7778}
+        published: ${PING_PORT:-7778}
+        protocol: udp
+      - target: ${QUERY_PORT:-27015}
+        published: ${QUERY_PORT:-27015}
+        protocol: udp
+    volumes:
+      - type: bind
+        source: ./data
+        target: /home/steam/server-files

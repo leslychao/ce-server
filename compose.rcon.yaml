@@ -1,0 +1,6 @@
+services:
+  server:
+    ports:
+      - target: ${RCON_PORT:-25575}
+        published: ${RCON_PORT:-25575}
+        protocol: tcp
