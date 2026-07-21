@@ -77,11 +77,12 @@ try {
         '3720737911:ExtendedThrallStatsEnhanced.pak',
         '3719585133:DamageNumber.pak',
         '3719513784:Simple_Minimap.pak',
+        '3720948133:UnlockableContainers.pak',
         '3720915336:StacksizePlus.pak',
         '3719604490:Retro_Purge.pak'
     ) -join ','
     if ($settings['MOD_WORKSHOP_ITEMS'] -ne $expectedMods) {
-        throw 'Generated .env must configure the current nine mods in client load order'
+        throw 'Generated .env must configure the current ten mods in client load order'
     }
 
     $bytes = [System.IO.File]::ReadAllBytes($envPath)

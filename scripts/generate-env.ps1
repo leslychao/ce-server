@@ -83,7 +83,7 @@ $lines = @(
     'STEAM_GID=1000',
     '',
     'UPDATE_ON_START=true',
-    'MOD_WORKSHOP_ITEMS=3720904511:BetterThralls.pak,3745733234:Base_material_worker.pak,3719642461:Xev_HearthStone.pak,3718523921:Thrall_Commander.pak,3720737911:ExtendedThrallStatsEnhanced.pak,3719585133:DamageNumber.pak,3719513784:Simple_Minimap.pak,3720915336:StacksizePlus.pak,3719604490:Retro_Purge.pak',
+    'MOD_WORKSHOP_ITEMS=3720904511:BetterThralls.pak,3745733234:Base_material_worker.pak,3719642461:Xev_HearthStone.pak,3718523921:Thrall_Commander.pak,3720737911:ExtendedThrallStatsEnhanced.pak,3719585133:DamageNumber.pak,3719513784:Simple_Minimap.pak,3720948133:UnlockableContainers.pak,3720915336:StacksizePlus.pak,3719604490:Retro_Purge.pak',
     '',
     "SERVER_NAME=$ServerName",
     "ADMIN_PASSWORD=$adminPassword",
