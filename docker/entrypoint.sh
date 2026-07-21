@@ -141,6 +141,10 @@ parse_workshop_mod_items() {
   WORKSHOP_MOD_PAKS=()
 
   [[ -n "${MOD_WORKSHOP_ITEMS:-}" ]] || return 0
+  [[ "$MOD_WORKSHOP_ITEMS" != ,* && "$MOD_WORKSHOP_ITEMS" != *, && "$MOD_WORKSHOP_ITEMS" != *,,* ]] || {
+    die "Invalid MOD_WORKSHOP_ITEMS: empty entry"
+    return 1
+  }
 
   local -a entries
   local entry mod_id pak_name pak_key
@@ -149,7 +153,7 @@ parse_workshop_mod_items() {
   IFS=',' read -r -a entries <<< "$MOD_WORKSHOP_ITEMS"
 
   for entry in "${entries[@]}"; do
-    if [[ ! "$entry" =~ ^([0-9]+):([A-Za-z0-9][A-Za-z0-9_.-]*[.]pak)$ ]]; then
+    if [[ ! "$entry" =~ ^([1-9][0-9]*):([A-Za-z0-9][A-Za-z0-9_.-]*[.]pak)$ ]]; then
       die "Invalid MOD_WORKSHOP_ITEMS entry: ${entry}"
       return 1
     fi
@@ -157,11 +161,6 @@ parse_workshop_mod_items() {
     mod_id="${BASH_REMATCH[1]}"
     pak_name="${BASH_REMATCH[2]}"
     pak_key="${pak_name,,}"
-
-    [[ "$mod_id" != "0" ]] || {
-      die "Workshop mod ID must be positive: ${mod_id}"
-      return 1
-    }
     [[ -z "${seen_ids[$mod_id]:-}" ]] || {
       die "Duplicate Workshop mod ID: ${mod_id}"
       return 1

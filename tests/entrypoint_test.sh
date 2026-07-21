@@ -125,6 +125,10 @@ test_rejects_unsafe_workshop_mod_entries() {
   ! parse_workshop_mod_items 2>/dev/null &&
     MOD_WORKSHOP_ITEMS='not-an-id:Mod.pak' &&
     ! parse_workshop_mod_items 2>/dev/null &&
+    MOD_WORKSHOP_ITEMS='01:LeadingZero.pak' &&
+    ! parse_workshop_mod_items 2>/dev/null &&
+    MOD_WORKSHOP_ITEMS='111:First.pak,' &&
+    ! parse_workshop_mod_items 2>/dev/null &&
     MOD_WORKSHOP_ITEMS='111:First.pak,111:Second.pak' &&
     ! parse_workshop_mod_items 2>/dev/null &&
     MOD_WORKSHOP_ITEMS='111:Same.pak,222:Same.pak' &&
