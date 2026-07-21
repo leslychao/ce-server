@@ -33,7 +33,6 @@ try {
         'UPDATE_ON_START',
         'MOD_WORKSHOP_ITEMS',
         'SERVER_NAME',
-        'SERVER_PASSWORD',
         'ADMIN_PASSWORD',
         'GAME_PORT',
         'PING_PORT',
@@ -50,7 +49,11 @@ try {
         }
     }
 
-    $secretKeys = @('SERVER_PASSWORD', 'ADMIN_PASSWORD', 'RCON_PASSWORD')
+    if ($settings.ContainsKey('SERVER_PASSWORD')) {
+        throw 'Generated .env must not configure SERVER_PASSWORD; compose keeps the join password disabled'
+    }
+
+    $secretKeys = @('ADMIN_PASSWORD', 'RCON_PASSWORD')
     $secretFingerprints = [System.Collections.Generic.HashSet[string]]::new()
     foreach ($key in $secretKeys) {
         $secret = $settings[$key]

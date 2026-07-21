@@ -3,7 +3,7 @@ param(
     [string]$OutputPath,
 
     [ValidateNotNullOrEmpty()]
-    [string]$ServerName = 'Conan Exiles Enhanced Private Server',
+    [string]$ServerName = 'Conan Exiles Enhanced Server',
 
     [ValidateRange(1, 200)]
     [int]$MaxPlayers = 20,
@@ -74,7 +74,6 @@ if (-not (Test-Path -LiteralPath $outputDirectory -PathType Container)) {
     New-Item -ItemType Directory -Path $outputDirectory | Out-Null
 }
 
-$serverPassword = New-UrlSafeSecret
 $adminPassword = New-UrlSafeSecret
 $rconPassword = New-UrlSafeSecret
 
@@ -87,7 +86,6 @@ $lines = @(
     'MOD_WORKSHOP_ITEMS=3720904511:BetterThralls.pak,3719642461:Xev_HearthStone.pak,3718523921:Thrall_Commander.pak,3720737911:ExtendedThrallStatsEnhanced.pak,3719585133:DamageNumber.pak,3719513784:Simple_Minimap.pak,3720915336:StacksizePlus.pak,3719604490:Retro_Purge.pak',
     '',
     "SERVER_NAME=$ServerName",
-    "SERVER_PASSWORD=$serverPassword",
     "ADMIN_PASSWORD=$adminPassword",
     '',
     'GAME_PORT=7777',
@@ -106,4 +104,4 @@ $content = [string]::Join("`n", $lines) + "`n"
 [System.IO.File]::WriteAllText($resolvedOutputPath, $content, $utf8WithoutBom)
 Set-SecretFilePermissions -Path $resolvedOutputPath
 
-Write-Output 'Production .env created with unique generated secrets; values were not printed.'
+Write-Output 'Production .env created with unique generated admin and RCON secrets; values were not printed.'
