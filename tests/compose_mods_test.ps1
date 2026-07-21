@@ -5,6 +5,7 @@ $composeFile = Join-Path $projectRoot 'compose.yaml'
 $rconComposeFile = Join-Path $projectRoot 'compose.rcon.yaml'
 $expectedItems = @(
     '3720904511:BetterThralls.pak'
+    '3745733234:Base_material_worker.pak'
     '3719642461:Xev_HearthStone.pak'
     '3718523921:Thrall_Commander.pak'
     '3720737911:ExtendedThrallStatsEnhanced.pak'
@@ -37,7 +38,7 @@ $config = Get-ComposeConfig
 
 $actualItems = @($config.services.server.environment.MOD_WORKSHOP_ITEMS -split ',')
 if (($actualItems -join "`n") -ne ($expectedItems -join "`n")) {
-    throw "Compose must configure the current eight mods in client load order. Actual: $($actualItems -join ', ')"
+    throw "Compose must configure the current nine mods in client load order. Actual: $($actualItems -join ', ')"
 }
 
 if ($config.services.server.environment.SERVER_PASSWORD -ne '') {

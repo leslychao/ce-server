@@ -71,6 +71,7 @@ try {
 
     $expectedMods = @(
         '3720904511:BetterThralls.pak',
+        '3745733234:Base_material_worker.pak',
         '3719642461:Xev_HearthStone.pak',
         '3718523921:Thrall_Commander.pak',
         '3720737911:ExtendedThrallStatsEnhanced.pak',
@@ -80,7 +81,7 @@ try {
         '3719604490:Retro_Purge.pak'
     ) -join ','
     if ($settings['MOD_WORKSHOP_ITEMS'] -ne $expectedMods) {
-        throw 'Generated .env must configure the current eight mods in client load order'
+        throw 'Generated .env must configure the current nine mods in client load order'
     }
 
     $bytes = [System.IO.File]::ReadAllBytes($envPath)

@@ -63,12 +63,12 @@ Docker-host. При CGNAT потребуется белый IP или внешн
 ## Моды
 
 При первом запуске и перед каждым последующим стартом контейнер автоматически
-скачивает через SteamCMD текущие восемь Enhanced-модов, проверяет ожидаемые
+скачивает через SteamCMD текущие девять Enhanced-модов, проверяет ожидаемые
 `.pak` и только после успеха запускает сервер. Порядок задаётся одной строкой
 `MOD_WORKSHOP_ITEMS` в формате `WorkshopID:PakName`:
 
 ```dotenv
-MOD_WORKSHOP_ITEMS=3720904511:BetterThralls.pak,3719642461:Xev_HearthStone.pak,3718523921:Thrall_Commander.pak,3720737911:ExtendedThrallStatsEnhanced.pak,3719585133:DamageNumber.pak,3719513784:Simple_Minimap.pak,3720915336:StacksizePlus.pak,3719604490:Retro_Purge.pak
+MOD_WORKSHOP_ITEMS=3720904511:BetterThralls.pak,3745733234:Base_material_worker.pak,3719642461:Xev_HearthStone.pak,3718523921:Thrall_Commander.pak,3720737911:ExtendedThrallStatsEnhanced.pak,3719585133:DamageNumber.pak,3719513784:Simple_Minimap.pak,3720915336:StacksizePlus.pak,3719604490:Retro_Purge.pak
 ```
 
 Bootstrap использует Workshop App ID `440900`, сохраняет кэш в
@@ -76,10 +76,9 @@ Bootstrap использует Workshop App ID `440900`, сохраняет кэ
 заменяет `modlist.txt` последним. Если SteamCMD не скачал хотя бы один
 ожидаемый ненулевой PAK, сервер не стартует с неполным набором.
 
-`Base_material_worker.pak` не включён: запись остаётся в клиентском
-`modlist.txt`, но самого PAK сейчас нет и клиент его не монтирует. Для
-аварийной локальной синхронизации с установленного Windows-клиента остаётся
-скрипт:
+`Base_Mat_Worker[Enhanced]` (`3745733234`, `Base_material_worker.pak`) включён
+вторым после `Better Thralls`, как в клиентском `modlist.txt`. Для аварийной
+локальной синхронизации с установленного Windows-клиента остаётся скрипт:
 
 ```powershell
 docker compose stop server
