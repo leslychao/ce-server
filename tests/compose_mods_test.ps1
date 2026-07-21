@@ -11,7 +11,6 @@ $expectedItems = @(
     '3720737911:ExtendedThrallStatsEnhanced.pak'
     '3719585133:DamageNumber.pak'
     '3719513784:Simple_Minimap.pak'
-    '3720948133:UnlockableContainers.pak'
     '3720915336:StacksizePlus.pak'
     '3719604490:Retro_Purge.pak'
 )
@@ -39,7 +38,7 @@ $config = Get-ComposeConfig
 
 $actualItems = @($config.services.server.environment.MOD_WORKSHOP_ITEMS -split ',')
 if (($actualItems -join "`n") -ne ($expectedItems -join "`n")) {
-    throw "Compose must configure the current ten mods in client load order. Actual: $($actualItems -join ', ')"
+    throw "Compose must configure the current nine mods in client load order. Actual: $($actualItems -join ', ')"
 }
 
 if ($config.services.server.environment.SERVER_PASSWORD -ne '') {
