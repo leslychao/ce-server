@@ -39,6 +39,16 @@ validate_positive_integer() {
   }
 }
 
+validate_hour() {
+  local name="$1"
+  local value="$2"
+
+  [[ "$value" =~ ^([0-9]|1[0-9]|2[0-3])$ ]] || {
+    die "${name} must be an hour between 0 and 23"
+    return 1
+  }
+}
+
 validate_boolean() {
   local name="$1"
   local value="$2"
@@ -63,6 +73,8 @@ set_defaults() {
   : "${SERVER_DIR:=/home/steam/server-files}"
   : "${STEAMCMD_BIN:=/opt/steamcmd/steamcmd.sh}"
   : "${UPDATE_ON_START:=true}"
+  : "${AUTO_RESTART_ENABLED:=true}"
+  : "${AUTO_RESTART_MSK_HOUR:=3}"
   : "${STEAM_WORKSHOP_DIR:=${SERVER_DIR}/steamapps/workshop/content/440900}"
   : "${MOD_WORKSHOP_ITEMS:=}"
   : "${SERVER_NAME:=Conan Exiles Enhanced Server}"
@@ -81,6 +93,8 @@ validate_environment() {
   set_defaults
 
   validate_boolean UPDATE_ON_START "$UPDATE_ON_START"
+  validate_boolean AUTO_RESTART_ENABLED "$AUTO_RESTART_ENABLED"
+  validate_hour AUTO_RESTART_MSK_HOUR "$AUTO_RESTART_MSK_HOUR"
   validate_boolean RCON_ENABLED "$RCON_ENABLED"
   validate_single_line MOD_WORKSHOP_ITEMS "$MOD_WORKSHOP_ITEMS"
   validate_port GAME_PORT "$GAME_PORT"
@@ -305,6 +319,49 @@ build_server_args() {
   )
 }
 
+seconds_until_msk_hour() {
+  local target_hour="$1"
+  local now_epoch="${2:-$(date -u +%s)}"
+  local target_utc_seconds=$(((target_hour * 3600 - 3 * 3600 + 86400) % 86400))
+  local current_utc_seconds=$((now_epoch % 86400))
+  local delay=$(((target_utc_seconds - current_utc_seconds + 86400) % 86400))
+
+  ((delay > 0)) || delay=86400
+  printf '%s\n' "$delay"
+}
+
+run_server() {
+  local executable="$1"
+  shift
+
+  if [[ "$AUTO_RESTART_ENABLED" != "true" ]]; then
+    exec "$executable" "$@"
+  fi
+
+  local server_pid restart_timer_pid delay
+  delay="$(seconds_until_msk_hour "$AUTO_RESTART_MSK_HOUR")"
+  log "Scheduled automatic restart at ${AUTO_RESTART_MSK_HOUR}:00 MSK (in ${delay} seconds)"
+
+  "$executable" "$@" &
+  server_pid=$!
+  (
+    sleep "$delay"
+    log "Scheduled restart time reached; stopping the server"
+    kill -TERM "$server_pid" 2>/dev/null || true
+  ) &
+  restart_timer_pid=$!
+
+  trap 'kill -TERM "$server_pid" "$restart_timer_pid" 2>/dev/null || true' TERM INT
+
+  local server_status=0
+  wait "$server_pid" || server_status=$?
+  kill -TERM "$restart_timer_pid" 2>/dev/null || true
+  wait "$restart_timer_pid" 2>/dev/null || true
+  trap - TERM INT
+
+  return "$server_status"
+}
+
 main() {
   validate_environment
   assert_non_root
@@ -322,7 +379,7 @@ main() {
   configure_server
   build_server_args
   log "Starting server '${SERVER_NAME}' on UDP ${GAME_PORT} (query UDP ${QUERY_PORT})"
-  exec "$executable" "${SERVER_ARGS[@]}"
+  run_server "$executable" "${SERVER_ARGS[@]}"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

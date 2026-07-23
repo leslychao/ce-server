@@ -84,6 +84,21 @@ test_server_arguments_do_not_contain_secrets() {
     [[ "$rendered" != *rcon-secret* ]]
 }
 
+test_calculates_next_0300_msk_restart() {
+  load_entrypoint
+
+  [[ "$(seconds_until_msk_hour 3 0)" == '86400' ]] &&
+    [[ "$(seconds_until_msk_hour 3 82800)" == '3600' ]] &&
+    [[ "$(seconds_until_msk_hour 3 3600)" == '82800' ]]
+}
+
+test_rejects_invalid_restart_hour() {
+  load_entrypoint
+  ! validate_hour AUTO_RESTART_MSK_HOUR -1 2>/dev/null &&
+    ! validate_hour AUTO_RESTART_MSK_HOUR 24 2>/dev/null &&
+    ! validate_hour AUTO_RESTART_MSK_HOUR text 2>/dev/null
+}
+
 test_steamcmd_uses_official_app_and_linux_platform() {
   load_entrypoint
   local temp_dir mock_log mock_steamcmd
@@ -212,6 +227,8 @@ run_test 'multiline configuration is rejected' test_rejects_multiline_configurat
 run_test 'RCON requires a password' test_requires_rcon_password_when_enabled
 run_test 'pinger port must equal game port plus one' test_requires_pinger_port_after_game_port
 run_test 'secrets are not exposed in process arguments' test_server_arguments_do_not_contain_secrets
+run_test 'next 03:00 MSK restart delay is calculated' test_calculates_next_0300_msk_restart
+run_test 'invalid scheduled restart hours are rejected' test_rejects_invalid_restart_hour
 run_test 'SteamCMD downloads official Linux app 443030' test_steamcmd_uses_official_app_and_linux_platform
 run_test 'Workshop mods preserve configured load order' test_parses_workshop_mods_in_load_order
 run_test 'unsafe Workshop mod entries are rejected' test_rejects_unsafe_workshop_mod_entries
